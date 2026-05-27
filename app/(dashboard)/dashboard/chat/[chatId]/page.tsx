@@ -1,86 +1,90 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Bot, Check, Copy, Send, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Send, Sparkles, User } from "lucide-react";
 import { useState } from "react";
 
 const mockMessages = [
   {
     id: "1",
     role: "user",
-    content: "how can i use the supabase in the nextjs applications ",
+    content:
+      "Explain the architectural difference between Prisma and Drizzle ORM.",
   },
   {
     id: "2",
     role: "assistant",
-    content: `To use Supabase in Next.js (App Router), you need to install the following libraries:
-\`\`\`bash
-npm install @supabase/ssr @supabase/supabase-js
-\`\`\`
-Then, create a client for the server and a client for the client to manage authentication and cookies easily.`,
+    content: "Drizzle is a TypeScript-first SQL Query Builder...",
   },
 ];
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
+export default function ChatPage() {
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col justify-between gap-4">
+    <div className="flex flex-col h-full justify-between pb-2 bg-background text-foreground px-16">
       <div className="flex-1 overflow-y-auto pr-2 space-y-6">
         {mockMessages.map((message) => {
           const isAi = message.role === "assistant";
           return (
             <div
               key={message.id}
-              className={`flex gap-4 p-4 rounded-xl max-w-3xl transition-colors ${
+              className={cn(
+                "flex gap-4 p-5 rounded-2xl max-w-3xl transition-all duration-200 border",
                 isAi
-                  ? "bg-muted/50 border border-border/40"
-                  : "bg-background ml-auto flex-row-reverse"
-              }`}
+                  ? "bg-muted/40 border-border shadow-sm"
+                  : "bg-transparent border-transparent ml-auto flex-row-reverse",
+              )}
             >
               <div
-                className={`flex size-8 shrink-0 select-none items-center justify-center rounded-lg border text-sm font-medium shadow-sm ${
-                  isAi ? "bg-foreground text-background" : "bg-background"
-                }`}
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold shadow-sm",
+                  isAi
+                    ? "bg-foreground text-background border-border"
+                    : "bg-muted text-muted-foreground border-border",
+                )}
               >
                 {isAi ? (
-                  <Bot className="size-4" />
+                  <Sparkles className="h-3.5 w-3.5 fill-current" />
                 ) : (
-                  <User className="size-4" />
+                  <User className="h-3.5 w-3.5" />
                 )}
               </div>
 
-              <div className="flex-1 space-y-2 overflow-hidden text-sm leading-relaxed">
+              <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-xs text-muted-foreground">
-                    {isAi ? "Codevia AI" : "You"}
+                  <span className="font-medium text-xs text-muted-foreground tracking-wide">
+                    {isAi ? "Codevia Engine" : "You"}
                   </span>
-                  {isAi && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 text-muted-foreground hover:text-foreground"
-                      onClick={() => handleCopy(message.content, message.id)}
-                    >
-                      {copiedId === message.id ? (
-                        <Check className="size-3 text-green-500" />
-                      ) : (
-                        <Copy className="size-3" />
-                      )}
-                    </Button>
-                  )}
                 </div>
 
-                <div className="whitespace-pre-wrap font-normal text-foreground/90">
-                  {message.content}
+                <div className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                  {isAi ? (
+                    <div className="space-y-3">
+                      <p>
+                        Drizzle ORM is a TypeScript-first SQL Query Builder.
+                        Example:
+                      </p>
+
+                      <div className="relative mt-2 rounded-xl bg-muted border border-border p-4 font-mono text-xs text-muted-foreground shadow-inner overflow-x-auto">
+                        <span className="text-blue-500 dark:text-purple-400">
+                          import
+                        </span>{" "}
+                        {"{ pgTable }"}{" "}
+                        <span className="text-blue-500 dark:text-purple-400">
+                          from
+                        </span>{" "}
+                        <span className="text-green-600 dark:text-emerald-400">
+                          {"drizzle-orm/pg-core"}
+                        </span>
+                        ;
+                      </div>
+                    </div>
+                  ) : (
+                    message.content
+                  )}
                 </div>
               </div>
             </div>
@@ -88,32 +92,35 @@ export default function ChatPage({ params }: { params: { chatId: string } }) {
         })}
       </div>
 
-      <div className="border-t pt-4 bg-background">
+      {/* Input Box */}
+      <div className="pt-4 bg-background border-t border-border">
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="relative flex items-center rounded-xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring"
+          className="relative flex items-center rounded-2xl border border-border bg-card shadow-lg focus-within:border-muted-foreground/40 transition-all duration-200"
         >
-          <Input
-            placeholder="Type your message here..."
-            className="min-h-12 w-full border-0 bg-transparent pl-4 pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+          <input
+            type="text"
+            placeholder="Ask Codevia anything..."
+            className="h-14 w-full bg-transparent pl-5 pr-14 text-sm text-foreground placeholder-muted-foreground outline-none"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="absolute right-3">
             <Button
               type="submit"
               size="icon"
-              className="size-8"
+              className={cn(
+                "h-9 w-9 rounded-xl transition-all duration-200",
+                input.trim()
+                  ? "bg-foreground text-background hover:bg-foreground/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed",
+              )}
               disabled={!input.trim()}
             >
-              <Send className="size-3.5" />
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </form>
-        <p className="text-[11px] text-center text-muted-foreground mt-2">
-          Codevia AI can make mistakes. Verify important code or architectural
-          decisions.
-        </p>
       </div>
     </div>
   );
