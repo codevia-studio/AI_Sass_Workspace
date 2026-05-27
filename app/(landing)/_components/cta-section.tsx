@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 import { PROJECT_NAME } from "@/constants";
+import Link from "next/link";
 
 export function CtaSection() {
   return (
@@ -17,9 +18,12 @@ export function CtaSection() {
               conversation, prompt, and output has a place.
             </p>
             <div className="mt-8 flex w-full max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-              <Button size="lg" className="w-full sm:w-auto">
-                Get early access
-              </Button>
+              <Link href="/auth/login">
+                <Button size="lg" className="w-full sm:w-auto cursor-pointer">
+                  Get early access
+                </Button>
+              </Link>
+
               <Button
                 variant="outline"
                 size="lg"

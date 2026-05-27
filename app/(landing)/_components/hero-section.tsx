@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 
 import { PROJECT_NAME } from "@/constants";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -31,10 +32,12 @@ export function HeroSection() {
           conversations, and a prompt library built in.
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button size="lg" className="w-full sm:w-auto">
-            Start building
-            <ArrowRight className="size-4" data-icon="inline-end" />
-          </Button>
+          <Link href="/auth/login">
+            <Button size="lg" className="w-full sm:w-auto cursor-pointer">
+              Start building
+              <ArrowRight className="size-4" data-icon="inline-end" />
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="lg"
