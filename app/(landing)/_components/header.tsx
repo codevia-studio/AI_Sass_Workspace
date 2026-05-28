@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { PROJECT_NAME } from "@/constants";
+import Link from "next/link";
 import { navLinks } from "./constants";
 
 export function LandingHeader() {
@@ -31,13 +32,21 @@ export function LandingHeader() {
         </nav>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-            Sign in
-          </Button>
-          <Button size="sm">
-            Get started
-            <ArrowRight className="size-4" data-icon="inline-end" />
-          </Button>
+          <Link href="/auth/login">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex cursor-pointer"
+            >
+              Sign in
+            </Button>
+          </Link>
+          <Link href="/auth/login">
+            <Button size="sm" className="cursor-pointer">
+              Get started
+              <ArrowRight className="size-4" data-icon="inline-end" />
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
