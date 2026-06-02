@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 import { WorkspaceActions } from "./workspace-actions";
 import { WorkspaceCreateModal } from "./workspace-create-modal";
 
@@ -15,19 +16,21 @@ interface Workspace {
 interface WorkspaceSelectorProps {
   workspaces: Workspace[];
   activeWorkspace: string;
-  setActiveWorkspace: (id: string) => void;
 }
 
 export function WorkspaceSelector({
   workspaces,
   activeWorkspace,
-  setActiveWorkspace,
 }: WorkspaceSelectorProps) {
   const router = useRouter();
+  const [isPending, startTransition] = React.useTransition();
+  const [targetId, setTargetId] = React.useState<string | null>(null);
 
-  const handleClearActive = () => {
-    setActiveWorkspace("");
-    router.push("/dashboard");
+  const handleNavigation = (id: string) => {
+    setTargetId(id);
+    startTransition(() => {
+      router.push(`/dashboard?workspaceId=${id}`);
+    });
   };
 
   return (
@@ -47,6 +50,7 @@ export function WorkspaceSelector({
         ) : (
           workspaces.map((ws) => {
             const isActive = activeWorkspace === ws.id;
+            const isSwitching = isPending && targetId === ws.id;
 
             return (
               <div
@@ -54,15 +58,16 @@ export function WorkspaceSelector({
                 className="relative group w-full flex items-center"
               >
                 <button
-                  onClick={() => {
-                    setActiveWorkspace(ws.id);
-                    router.push(`/dashboard?workspaceId=${ws.id}`);
-                  }}
+                  onMouseEnter={() =>
+                    router.prefetch(`/dashboard?workspaceId=${ws.id}`)
+                  }
+                  onClick={() => handleNavigation(ws.id)}
                   className={cn(
                     "w-full flex items-center justify-between pl-3 pr-8 py-2 rounded-xl text-sm font-medium transition-all duration-200 border border-transparent text-left",
                     isActive
                       ? "bg-accent text-accent-foreground border-border shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
+                    isSwitching && "opacity-70",
                   )}
                 >
                   <span className="truncate text-xs">{ws.name}</span>
@@ -72,7 +77,7 @@ export function WorkspaceSelector({
                   <WorkspaceActions
                     workspace={ws}
                     isActive={isActive}
-                    onClearActive={handleClearActive}
+                    onClearActive={() => handleNavigation("")}
                   />
                 </div>
               </div>

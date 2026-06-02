@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   integer,
   pgEnum,
   pgTable,
@@ -34,6 +35,7 @@ export const chats = pgTable("chats", {
   workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
+  isPinned: boolean("is_pinned").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,9 +54,7 @@ export const subscriptions = pgTable("subscriptions", {
   profileId: uuid("profile_id")
     .notNull()
     .references(() => profiles.id, { onDelete: "cascade" }),
-
   planType: text("plan_type").default("free").notNull(),
-
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   status: text("status"),

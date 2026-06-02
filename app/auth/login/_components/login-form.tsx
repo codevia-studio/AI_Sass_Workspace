@@ -55,7 +55,7 @@ export default function LoginForm() {
         return;
       }
 
-      toast.success("Logged in successfully");
+      toast.success("Logged in successfully! Redirecting to dashboard...");
       router.push("/dashboard");
       router.refresh();
     } catch (error) {
