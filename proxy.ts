@@ -29,9 +29,13 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Supabase unreachable — allow public routes, redirect protected routes to login
+  }
 
   const url = request.nextUrl.clone();
   const pathname = url.pathname;

@@ -53,6 +53,7 @@ export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").defaultRandom().primaryKey(),
   profileId: uuid("profile_id")
     .notNull()
+    .unique()
     .references(() => profiles.id, { onDelete: "cascade" }),
   planType: text("plan_type").default("free").notNull(),
   stripeCustomerId: text("stripe_customer_id"),
@@ -63,8 +64,24 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodEnd: timestamp("current_period_end"),
 });
 
+export const prompts = pgTable("prompts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  profileId: uuid("profile_id")
+    .notNull()
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id, {
+    onDelete: "cascade",
+  }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").default("General").notNull(),
+  isFavorite: boolean("is_favorite").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const profilesRelations = relations(profiles, ({ many, one }) => ({
   workspaces: many(workspaces),
+  prompts: many(prompts),
   subscription: one(subscriptions, {
     fields: [profiles.id],
     references: [subscriptions.profileId],
@@ -77,6 +94,7 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
     references: [profiles.id],
   }),
   chats: many(chats),
+  prompts: many(prompts),
 }));
 
 export const chatsRelations = relations(chats, ({ one, many }) => ({
@@ -91,5 +109,16 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   chat: one(chats, {
     fields: [messages.chatId],
     references: [chats.id],
+  }),
+}));
+
+export const promptsRelations = relations(prompts, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [prompts.profileId],
+    references: [profiles.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [prompts.workspaceId],
+    references: [workspaces.id],
   }),
 }));

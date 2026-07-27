@@ -15,6 +15,13 @@
       "when": 1780413882447,
       "tag": "0001_big_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783000000000,
+      "tag": "0003_subscription_profile_unique",
+      "breakpoints": true
     }
   ]
 }

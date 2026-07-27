@@ -74,7 +74,7 @@ export function SidebarFooter({
         <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg border border-border bg-muted items-center justify-center select-none">
           {user.avatarUrl ? (
             <Image
-              src={user.avatarUrl}
+              src={user.avatarUrl.split("?")[0]}
               alt={user.fullName}
               className="h-full w-full object-cover"
               width={32}
