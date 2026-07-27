@@ -49,6 +49,7 @@ export async function createChat(
       .values({
         title,
         workspaceId,
+        isPinned: false,
       })
       .returning();
 
@@ -80,6 +81,27 @@ export async function updateChat(id: string, newTitle: string) {
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update chat";
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function togglePinChat(id: string, isPinned: boolean) {
+  try {
+    await getAuthenticatedUser();
+
+    const [updatedChat] = await db
+      .update(chats)
+      .set({ isPinned })
+      .where(eq(chats.id, id))
+      .returning();
+
+    if (!updatedChat) return { success: false, error: "Chat not found" };
+
+    revalidatePath("/dashboard");
+    return { success: true, data: updatedChat };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to toggle pin status";
     return { success: false, error: errorMessage };
   }
 }
