@@ -1,7 +1,11 @@
 "use client";
 
-import { Crown } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { CREDITS_CONSUMED_EVENT } from "@/constants";
+import { Crown, BookMarked } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import * as React from "react";
+import { cn } from "@/lib/utils";
 import { SidebarFooter } from "./sidebar-footer";
 import { WorkspaceSelector } from "./workspace-selector";
 
@@ -27,12 +31,30 @@ interface SidebarProps {
 }
 
 export function AppSidebar({ user, subscription, workspaces }: SidebarProps) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryWorkspaceId = searchParams.get("workspaceId") || "";
 
   const planType = subscription?.planType || "free";
   const creditsAllowed = subscription?.creditsAllowed ?? 10;
-  const creditsUsed = subscription?.creditsUsed ?? 0;
+  const serverCreditsUsed = subscription?.creditsUsed ?? 0;
+  const [creditsUsed, setCreditsUsed] = React.useState(serverCreditsUsed);
+
+  React.useEffect(() => {
+    setCreditsUsed(serverCreditsUsed);
+  }, [serverCreditsUsed]);
+
+  React.useEffect(() => {
+    const handleCreditsConsumed = () => {
+      setCreditsUsed((current) => current + 1);
+    };
+
+    window.addEventListener(CREDITS_CONSUMED_EVENT, handleCreditsConsumed);
+    return () => {
+      window.removeEventListener(CREDITS_CONSUMED_EVENT, handleCreditsConsumed);
+    };
+  }, []);
+
   const creditsLeft = creditsAllowed - creditsUsed;
 
   const planConfig = {
@@ -69,19 +91,43 @@ export function AppSidebar({ user, subscription, workspaces }: SidebarProps) {
 
   return (
     <div className="flex h-screen w-64 flex-col border-r border-border bg-card px-4 py-6 text-card-foreground selection:bg-accent shrink-0">
-      <div className="flex items-center gap-2.5 px-2 pb-6 border-b border-border/60">
+      <Link
+        href={
+          activeWorkspace
+            ? `/dashboard?workspaceId=${activeWorkspace}`
+            : "/dashboard"
+        }
+        className="flex items-center gap-2.5 px-2 pb-6 border-b border-border/60 transition-opacity hover:opacity-80 cursor-pointer"
+      >
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background shadow-sm">
           <span className="text-xs font-black tracking-tighter">AS</span>
         </div>
         <span className="text-base font-bold tracking-tight text-foreground">
           Codevia Space
         </span>
-      </div>
+      </Link>
 
       <WorkspaceSelector
         workspaces={workspaces}
         activeWorkspace={activeWorkspace}
       />
+
+      <Link
+        href={
+          activeWorkspace
+            ? `/dashboard/prompts?workspaceId=${activeWorkspace}`
+            : "/dashboard/prompts"
+        }
+        className={cn(
+          "mt-4 flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-colors h-9 shrink-0",
+          pathname === "/dashboard/prompts"
+            ? "bg-accent text-accent-foreground font-medium"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/30",
+        )}
+      >
+        <BookMarked className="h-4 w-4" />
+        <span>Prompt Library</span>
+      </Link>
 
       <SidebarFooter
         user={user}

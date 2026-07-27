@@ -1,38 +1,19 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { subscriptions } from "@/lib/db/schema";
-import { createClient } from "@/lib/supabase/server";
-import { eq } from "drizzle-orm";
+import { getAuthenticatedUser } from "@/lib/auth/ownership";
+import { getOrCreateSubscription } from "@/lib/subscription/credits";
 
 export async function getUserSubscription() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) return null;
-
-    const userSubscription = await db.query.subscriptions.findFirst({
-      where: eq(subscriptions.profileId, user.id),
-    });
-
-    if (!userSubscription) {
-      return {
-        planType: "free",
-        status: "active",
-        creditsAllowed: 10,
-        creditsUsed: 0,
-      };
-    }
+    const user = await getAuthenticatedUser();
+    const subscription = await getOrCreateSubscription(user.id);
 
     return {
-      planType: userSubscription.planType,
-      status: userSubscription.status,
-      creditsAllowed: userSubscription.creditsAllowed,
-      creditsUsed: userSubscription.creditsUsed,
+      planType: subscription.planType,
+      status: subscription.status,
+      creditsAllowed: subscription.creditsAllowed,
+      creditsUsed: subscription.creditsUsed,
+      stripeCustomerId: subscription.stripeCustomerId,
     };
   } catch (error) {
     console.error("Error in getUserSubscription:", error);

@@ -1,5 +1,15 @@
+import {
+  assertChatOwner,
+  AuthError,
+  ForbiddenError,
+  getAuthenticatedUser,
+} from "@/lib/auth/ownership";
 import { db } from "@/lib/db";
 import { chats, messages } from "@/lib/db/schema";
+import {
+  consumeMessageCredit,
+  CreditsExhaustedError,
+} from "@/lib/subscription/credits";
 import { eq } from "drizzle-orm";
 
 interface ValidStreamMessage {
@@ -20,6 +30,10 @@ export async function POST(req: Request) {
     if (!chatId || !messageHistory || messageHistory.length === 0) {
       return new Response("Missing required fields", { status: 400 });
     }
+
+    const user = await getAuthenticatedUser();
+    await assertChatOwner(user.id, chatId);
+    await consumeMessageCredit(user.id);
 
     const lastUserMessage = messageHistory[messageHistory.length - 1];
     const userContent =
@@ -143,6 +157,21 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    if (error instanceof ForbiddenError) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    if (error instanceof CreditsExhaustedError) {
+      return new Response(
+        JSON.stringify({ error: "You have used all your message credits." }),
+        {
+          status: 402,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
     console.error("Native Fetch Chat Error:", error);
     return new Response("Internal Server Error", { status: 500 });
   }

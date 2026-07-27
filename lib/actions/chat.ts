@@ -1,28 +1,19 @@
 "use server";
 
+import {
+  assertChatOwner,
+  assertWorkspaceOwner,
+  getAuthenticatedUser,
+} from "@/lib/auth/ownership";
 import { db } from "@/lib/db";
 import { chats } from "@/lib/db/schema";
-import { createClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-async function getAuthenticatedUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Unauthorized");
-  }
-
-  return user;
-}
-
 export async function getChats(workspaceId: string) {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
+    await assertWorkspaceOwner(user.id, workspaceId);
 
     const workspaceChats = await db.query.chats.findMany({
       where: eq(chats.workspaceId, workspaceId),
@@ -41,8 +32,10 @@ export async function createChat(
   title: string = "New Chat Session",
 ) {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
     if (!workspaceId) throw new Error("Workspace ID is required");
+
+    await assertWorkspaceOwner(user.id, workspaceId);
 
     const [newChat] = await db
       .insert(chats)
@@ -65,8 +58,10 @@ export async function createChat(
 
 export async function updateChat(id: string, newTitle: string) {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
     if (!newTitle.trim()) throw new Error("Title is required");
+
+    await assertChatOwner(user.id, id);
 
     const [updatedChat] = await db
       .update(chats)
@@ -87,7 +82,8 @@ export async function updateChat(id: string, newTitle: string) {
 
 export async function togglePinChat(id: string, isPinned: boolean) {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
+    await assertChatOwner(user.id, id);
 
     const [updatedChat] = await db
       .update(chats)
@@ -108,7 +104,8 @@ export async function togglePinChat(id: string, isPinned: boolean) {
 
 export async function deleteChat(id: string) {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
+    await assertChatOwner(user.id, id);
 
     const [deletedChat] = await db
       .delete(chats)

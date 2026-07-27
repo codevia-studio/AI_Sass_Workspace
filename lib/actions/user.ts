@@ -1,48 +1,87 @@
 "use server";
 
+import { getAuthenticatedUser } from "@/lib/auth/ownership";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
-import { createServerClient } from "@supabase/ssr";
+import { profileSchema } from "@/lib/validations/profile";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 export async function getUserMetadata() {
   try {
-    const cookieStore = await cookies();
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-        },
-      },
-    );
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return null;
-    }
+    const user = await getAuthenticatedUser();
 
     const userProfile = await db.query.profiles.findFirst({
       where: eq(profiles.id, user.id),
     });
 
+    const metadataAvatar =
+      typeof user.user_metadata?.avatar_url === "string"
+        ? user.user_metadata.avatar_url
+        : typeof user.user_metadata?.picture === "string"
+          ? user.user_metadata.picture
+          : "";
+
     return {
       id: user.id,
       email: user.email,
-      fullName: userProfile?.fullName || "User",
-      avatarUrl: userProfile?.avatarUrl || "",
+      fullName: userProfile?.fullName || user.user_metadata?.full_name || "User",
+      avatarUrl: userProfile?.avatarUrl || metadataAvatar || "",
     };
   } catch (error) {
     console.error("Error in getUserMetadata:", error);
     return null;
+  }
+}
+
+export async function updateProfile(input: {
+  fullName: string;
+  avatarUrl?: string;
+}) {
+  try {
+    const user = await getAuthenticatedUser();
+    const parsed = profileSchema.safeParse({ fullName: input.fullName });
+
+    if (!parsed.success) {
+      return {
+        success: false as const,
+        error: parsed.error.issues[0]?.message ?? "Invalid profile data",
+      };
+    }
+
+    const existingProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, user.id),
+    });
+
+    const nextAvatarUrl =
+      input.avatarUrl !== undefined
+        ? input.avatarUrl
+        : (existingProfile?.avatarUrl ?? null);
+
+    if (existingProfile) {
+      await db
+        .update(profiles)
+        .set({
+          fullName: parsed.data.fullName,
+          avatarUrl: nextAvatarUrl,
+        })
+        .where(eq(profiles.id, user.id));
+    } else {
+      await db.insert(profiles).values({
+        id: user.id,
+        fullName: parsed.data.fullName,
+        avatarUrl: nextAvatarUrl,
+      });
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/settings");
+
+    return { success: true as const };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update profile";
+    console.error("Error in updateProfile:", error);
+    return { success: false as const, error: errorMessage };
   }
 }
